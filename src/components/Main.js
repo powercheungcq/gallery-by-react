@@ -3,15 +3,38 @@ require('styles/App.scss');
 
 import React from 'react';
 
-let yeomanImage = require('../images/yeoman.png');
+var imgDatas = require("../data/imgData.json");
+
+imgDatas = (function(imgArr){
+  for (var i = 0; i < imgArr.length; i++) {
+    let signleImg = imgArr[i];
+    signleImg.imgurl = require("../images/"+signleImg.fileName);
+    imgArr[i] = signleImg;
+  }
+  return imgArr;
+})(imgDatas);
+
+class ImgGroup extends React.Component{
+  constructor(props){
+    super(props);
+  }
+  render(){
+    const imgList = imgDatas.map((signleImg) => {
+      return (<img key={signleImg.fileName} src={signleImg.imgurl} />);
+    });
+    return (<div>
+        {imgList}
+      </div>);
+  }
+}
 
 class AppComponent extends React.Component {
   render() {
     return (
-      <div className="index">
-        <img src={yeomanImage} alt="Yeoman Generator" />
-        <div className="notice">Please edit <code>src/components/Main.js</code> to get started!</div>
-      </div>
+      <section className = "stage">
+        <section className = "img-sec"><ImgGroup /> </section>
+        <nav className = "controller-nav"></nav>
+      </section>
     );
   }
 }
