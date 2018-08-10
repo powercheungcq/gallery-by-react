@@ -98,6 +98,32 @@ function getRotate(){
   return (Math.random() > 0.5? '':'-') + Math.ceil(Math.random()*30);
 }
 
+//nav组件
+class ControllerUnit extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick(e){
+    if(!this.props.rangeArr.isCenter){
+      this.props.center();
+    }else{
+      this.props.inverse();
+    }
+
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  render(){
+    //如果需要翻转则添加翻转class
+    var controllerUnitClassName = 'controllerUnit';
+    controllerUnitClassName += this.props.rangeArr.isCenter ? ' is-center':'';
+    controllerUnitClassName += this.props.rangeArr.isInverse ? ' is-inverse':'';
+    return (
+      <span className = {controllerUnitClassName} onClick = {this.handleClick}></span>
+    )
+  }
+}
 
 //主控制组件
 class AppComponent extends React.Component {
@@ -118,7 +144,7 @@ class AppComponent extends React.Component {
         secY:[0,0]
       }
     };
-    this.State = {
+    this.state = {
       imgsArrangeArr:[
         /*{
           pos:{
@@ -129,7 +155,8 @@ class AppComponent extends React.Component {
           isInverse:false, //是否翻转
           isCenter:false  //是否为居中图片
         }*/
-      ]
+      ],
+      nowcenterIndex:0
     };
 
     this.rearrange = this.rearrange.bind(this);
@@ -145,7 +172,7 @@ class AppComponent extends React.Component {
   */
   inverse(index){
     return () => {
-      var imgsArrangeArr = this.State.imgsArrangeArr;
+      var imgsArrangeArr = this.state.imgsArrangeArr;
       imgsArrangeArr[index].isInverse = !imgsArrangeArr[index].isInverse;
       this.setState({imgsArrangeArr:imgsArrangeArr});
     }
@@ -160,7 +187,7 @@ class AppComponent extends React.Component {
   *@pram centerIndex : 需要定位到中间的图片 index
   */
   rearrange(centerIndex){
-    var imgsArrangeArr = this.State.imgsArrangeArr,
+    var imgsArrangeArr = this.state.imgsArrangeArr,
     Constant = this.Constant,
     centerPos = Constant.centerPos,
     hPosRange = Constant.hPosRange,
@@ -230,15 +257,16 @@ class AppComponent extends React.Component {
       imgsArrangeArr.splice(topImgSpliceIndex,0,imgsArrangeTopArr[0]);
     }
     imgsArrangeArr.splice(centerIndex,0,imgsArrangeCenterArr[0]);
-    this.setState({imgsArrangeArr:imgsArrangeArr});
+    this.setState({imgsArrangeArr:imgsArrangeArr,nowcenterIndex:centerIndex});
+
   }
   componentWillMount(){
     //初始化state
     imgDatas.forEach((value,index)=>{
     //  console.log(index);
-      if(!this.State.imgsArrangeArr[index]){
+      if(!this.state.imgsArrangeArr[index]){
 
-        let imgArr = this.State.imgsArrangeArr;
+        let imgArr = this.state.imgsArrangeArr;
 
         imgArr[index] = {
           pos:{
@@ -293,22 +321,38 @@ class AppComponent extends React.Component {
     this.Constant.vPosRange.secX[0] = halfStageW - imgW;
     this.Constant.vPosRange.secX[1] = halfStageW;
 
-    this.rearrange(0);
+    this.rearrange(this.state.nowcenterIndex);
+
+    var rearrangeTimer = setInterval(()=>{
+        let val = this.state.nowcenterIndex;
+        val = val+1;
+        this.rearrange(val);
+    },5000);
+
+
 
   }
+  componentWillUnmount(){
+    clearInterval(rearrangeTimer);
+  }
   render() {
-
       var ImgFigcaptions = imgDatas.map((value,index)=>{
           return (<ImgFigure key={value.fileName} data = {value} center = {this.center(index)} inverse = {this.inverse(index)}
-             rangeArr = {this.State.imgsArrangeArr[index]} ref = {'imgFigure' + index}/>
+             rangeArr = {this.state.imgsArrangeArr[index]} ref = {'imgFigure' + index}/>
            );
+      });
+      var controllerUnit = imgDatas.map((value,index)=>{
+          return (<ControllerUnit key = {value.fileName} center = {this.center(index)} inverse = {this.inverse(index)}
+             rangeArr = {this.state.imgsArrangeArr[index]} />);
       });
     return (
       <section className = "stage" ref = "stage">
         <section className = "img-sec">
           {ImgFigcaptions}
         </section>
-        <nav className = "controller-nav"></nav>
+        <nav className = "controller-nav">
+          {controllerUnit}
+        </nav>
       </section>
     );
   }
