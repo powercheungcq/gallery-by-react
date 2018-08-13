@@ -1,8 +1,11 @@
 require('normalize.css/normalize.css');
 require('styles/App.scss');
 
+
 import React from 'react';
 import {findDOMNode} from 'react-dom';
+import config from 'config'
+
 var imgDatas = require('../data/imgData.json');
 
 imgDatas = (function(imgArr){
@@ -22,6 +25,8 @@ class ImgFigure extends React.Component{
   constructor(props){
     super(props);
     this.handleClick = this.handleClick.bind(this);
+    this.handleMouseOver = this.handleMouseOver.bind(this);
+    this.handleMouseOut = this.handleMouseOut.bind(this);
   }
   /*
   *imgFigure 的点击处理函数
@@ -35,6 +40,16 @@ class ImgFigure extends React.Component{
 
     e.stopPropagation();
     e.preventDefault();
+  }
+  handleMouseOver(){
+    if(this.props.rangeArr.isCenter){
+      this.props.stopPlay();
+    }
+  }
+  handleMouseOut(){
+    if(this.props.rangeArr.isCenter){
+      this.props.autoPlay();
+    }
   }
   render(){
     var styleObj = {},borwerPrefix = ['Webkit','Moz','Ms',''];
@@ -65,7 +80,7 @@ class ImgFigure extends React.Component{
     imgFigureClassName += this.props.rangeArr.isInverse ? ' is-inverse':'';
 
     return (
-      <figure className={imgFigureClassName} onClick = {this.handleClick} style = {styleObj}>
+      <figure className={imgFigureClassName} onMouseLeave = {this.handleMouseOut} onMouseEnter = {this.handleMouseOver} onClick = {this.handleClick} style = {styleObj}>
         <img src={this.props.data.imgurl}
             alt={this.props.data.title}
         />
@@ -162,6 +177,8 @@ class AppComponent extends React.Component {
     this.rearrange = this.rearrange.bind(this);
     this.inverse = this.inverse.bind(this);
     this.center = this.center.bind(this);
+    this.autoPlay = this.autoPlay.bind(this);
+    this.stopPlay = this.stopPlay.bind(this);
   }
 
   /*
@@ -322,23 +339,39 @@ class AppComponent extends React.Component {
     this.Constant.vPosRange.secX[1] = halfStageW;
 
     this.rearrange(this.state.nowcenterIndex);
-    if(!this.timer){
-      this.timer = setInterval(()=>{
-          let val = this.state.nowcenterIndex;
-          val = val+1;
-          this.rearrange(val);
-      },5000);
-    }
+
+    this.autoPlay();
 
 
   }
   componentWillUnmount(){
-    clearInterval(this.timer);
+    this.stopPlay();
+
+  }
+  stopPlay(){
+    if(this.timer){
+      clearInterval(this.timer);
+      this.timer = undefined;
+    }
+  }
+  autoPlay(){
+    if(!this.timer){
+      this.timer = setInterval(()=>{
+          let val = this.state.nowcenterIndex;
+          if(val == this.state.imgsArrangeArr.length-1)
+          {
+            val = 0;
+          }else{
+            val = val+1;
+          }
+          this.rearrange(val);
+      },config.autoPlay);
+    }
   }
   render() {
       var ImgFigcaptions = imgDatas.map((value,index)=>{
           return (<ImgFigure key={value.fileName} data = {value} center = {this.center(index)} inverse = {this.inverse(index)}
-             rangeArr = {this.state.imgsArrangeArr[index]} ref = {'imgFigure' + index}/>
+             rangeArr = {this.state.imgsArrangeArr[index]} autoPlay = {this.autoPlay} stopPlay = {this.stopPlay} ref = {'imgFigure' + index}/>
            );
       });
       var controllerUnit = imgDatas.map((value,index)=>{
