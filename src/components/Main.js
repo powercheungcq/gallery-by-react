@@ -322,18 +322,18 @@ class AppComponent extends React.Component {
     this.Constant.vPosRange.secX[1] = halfStageW;
 
     this.rearrange(this.state.nowcenterIndex);
-
-    var rearrangeTimer = setInterval(()=>{
-        let val = this.state.nowcenterIndex;
-        val = val+1;
-        this.rearrange(val);
-    },5000);
-
+    if(!this.timer){
+      this.timer = setInterval(()=>{
+          let val = this.state.nowcenterIndex;
+          val = val+1;
+          this.rearrange(val);
+      },5000);
+    }
 
 
   }
   componentWillUnmount(){
-    clearInterval(rearrangeTimer);
+    clearInterval(this.timer);
   }
   render() {
       var ImgFigcaptions = imgDatas.map((value,index)=>{
